@@ -1,0 +1,34 @@
+# Rendered images (8K PPMs are hundreds of MB; GitHub rejects files over 100 MB)
+*.ppm
+*.png
+*.jpg
+
+# ...but keep the images you choose to show off
+!assets/
+!assets/*.png
+!results/
+!results/*.png
+
+# Compiled binaries and build output
+raytracer
+raytracer_*
+*.o
+a.out
+build/
+
+# Editor and OS clutter
+*.swp
+*~
+.vscode/
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Scratch output
+/tmp/
+omp.ppm
+ref.ppm
+again.ppm
