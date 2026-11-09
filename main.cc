@@ -7,6 +7,10 @@
 #include <cstdlib>
 #include <string>
 
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 static void build_scene(hittable_list& world, int num_objects, uint64_t seed) {
     // Fixed objects: ground and two feature spheres
     world.add(make_shared<sphere>(point3(0, -100.5, -1), 100, color(0.6, 0.6, 0.6), 0.1));
@@ -30,7 +34,7 @@ static void build_scene(hittable_list& world, int num_objects, uint64_t seed) {
 }
 
 int main(int argc, char** argv) {
-    int width = 400, spp = 10, depth = 5, objects = 50;
+    int width = 400, spp = 10, depth = 5, objects = 50,threads=0;
     uint64_t seed = 42;
 
     for (int a = 1; a < argc; a++) {
@@ -40,8 +44,13 @@ int main(int argc, char** argv) {
         else if (arg == "--depth"   && a + 1 < argc) depth   = std::atoi(argv[++a]);
         else if (arg == "--objects" && a + 1 < argc) objects = std::atoi(argv[++a]);
         else if (arg == "--seed"    && a + 1 < argc) seed    = std::strtoull(argv[++a], nullptr, 10);
+        else if (arg == "--threads" && a + 1 < argc) threads = std::atoi(argv[++a]);
         else { std::cerr << "Unknown or incomplete argument: " << arg << "\n"; return 1; }
     }
+    
+    #ifdef _OPENMP
+    if (threads > 0) omp_set_num_threads(threads);
+    #endif
 
     hittable_list world;
     build_scene(world, objects, seed);

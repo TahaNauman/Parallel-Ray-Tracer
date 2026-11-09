@@ -6,6 +6,10 @@
 #include <chrono>
 #include <vector>
 
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 struct point_light {
     point3 position;
     color intensity;
@@ -33,16 +37,22 @@ class camera {
 
         double compute_s = std::chrono::duration<double>(t1 - t0).count();
         double write_s   = std::chrono::duration<double>(t2 - t1).count();
+	int nthreads = 1;
+	#ifdef _OPENMP
+	nthreads = omp_get_max_threads();
+	#endif
         std::clog << "RESULT width=" << image_width << " height=" << image_height
-                  << " spp=" << samples_per_pixel << " depth=" << max_depth
-                  << " compute_s=" << compute_s << " write_s=" << write_s << "\n";
+          << " spp=" << samples_per_pixel << " depth=" << max_depth
+          << " threads=" << nthreads
+          << " compute_s=" << compute_s << " write_s=" << write_s << "\n";
     }
 
     // Renders the rectangle [x0, x0+w) x [y0, y0+h) into `tile`,
     // stored row-major with LOCAL indexing: tile[(j-y0)*w + (i-x0)].
     void render_tile(int x0, int y0, int w, int h,
                      const hittable& world, std::vector<color>& tile) const {
-        for (int j = y0; j < y0 + h; j++) {
+        #pragma omp parallel for schedule(runtime)
+	for (int j = y0; j < y0 + h; j++) {
             for (int i = x0; i < x0 + w; i++) {
                 rng gen(uint64_t(j) * image_width + i);   // seed depends only on the pixel
                 color pixel_color(0, 0, 0);
