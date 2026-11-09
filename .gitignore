@@ -32,3 +32,6 @@ __pycache__/
 omp.ppm
 ref.ppm
 again.ppm
+
+bin/
+
