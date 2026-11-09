@@ -106,3 +106,41 @@
 - Benchmark each config 3 to 5 times, report the median; interleave configs in the final script so drift does not bias one of them
 - Main sweeps at 1080p; 8K for only a few key configs
 - Load is uneven across the image: sky rows are cheap, ground and mirror spheres are expensive
+
+## MPI (static and master-worker)
+
+### Correctness
+- Static: IDENTICAL to reference at 1, 2, 3, 4, 8 ranks (225 rows, uneven blocks)
+- Dynamic: IDENTICAL at 2, 3, 4, 5, 8 ranks with tiles 64 and 37 (edge tiles tested)
+- Same scene on every rank from the same seed; render_tile uses global pixel coordinates, so RNG seeds match
+
+### Design
+- Static: contiguous row blocks per rank, MPI_Gatherv (counts in doubles), rank 0 writes the image
+- Dynamic: rank 0 is a coordinator (hands out tile ids, copies results into the image), ranks 1.. render; -np N means N-1 workers
+- Build: `make mpi` is pure MPI; `make hybrid` adds -fopenmp (same source file)
+- Use `--out FILE` for benchmarks: writing through mpirun's stdout took 7.2 s vs 0.21 s to a file
+
+### Interleaved comparison (1080p, SPP 4, 3 rounds, medians; seq = 26.29 s)
+| Version | median compute_s | speedup | efficiency |
+|---|---|---|---|
+| OpenMP, 4 threads, dynamic,1 | 9.06 | 2.90x | 73% |
+| MPI dynamic, 5 ranks (4 workers) | 10.04 | 2.62x | 65% |
+| MPI static, 4 ranks | 15.29 | 1.72x | 43% |
+- Static per-rank compute ranged from about 1.7 s to 15.1 s in every round (load imbalance, measured)
+- Dynamic workers stayed within about 1% of each other
+- Dynamic is 1.52x faster than static on the same four compute ranks
+- Dynamic MPI is about 11% slower than OpenMP dynamic; cause not tested (coordinator polling, message size, tile granularity)
+- Dynamic scaling: 3 workers 13.47 s, 4 workers 10.21 s (1.32x vs ideal 1.33x, single runs)
+
+### Caveats
+- Single-node shared-memory MPI: gather took 6.6 ms for about 50 MB, so communication is nearly free here; a real cluster would pay far more
+- In dynamic mode gather_s = 0 because results arrive during the compute phase
+- Tile-size sweep (16 to 270) and the mpi_yield_when_idle test were inconclusive: the same config varied 9.7 to 13.0 s across runs because of machine drift
+- To settle the coordinator question: interleave default vs `--mca mpi_yield_when_idle 1`, 3 rounds
+
+## TODO (updated)
+- [x] Static MPI, master-worker MPI
+- [ ] Hybrid: `make hybrid`, correctness first, then ranks x threads matrix (set OMP_SCHEDULE=dynamic,1; keep ranks x threads <= 8)
+- [ ] Optional: coordinator yield test
+- [ ] Understanding answers (pixel seed, render_tile shape, separate timing, static vs dynamic)
+- [ ] Benchmark script and graphs (Week 12)
