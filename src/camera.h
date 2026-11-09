@@ -64,6 +64,10 @@ class camera {
             }
         }
     }
+  
+  void prepare() { initialize(); }
+  int  height() const { return image_height; }
+  void output(std::ostream& out, const std::vector<color>& buffer) const { write_image(out, buffer); }
 
   private:
     int    image_height;
