@@ -144,3 +144,49 @@
 - [ ] Optional: coordinator yield test
 - [ ] Understanding answers (pixel seed, render_tile shape, separate timing, static vs dynamic)
 - [ ] Benchmark script and graphs (Week 12)
+
+## Main suite (scripts/bench.py --suite main --repeats 3)
+1080p, SPP 16, depth 5, 100 objects, seed 42. Interleaved runs in shuffled order, all binaries verified
+IDENTICAL to the reference first. Speedup is against the seq median 99.66 s (seq runs: 105.4, 92.0, 99.7).
+Efficiency = speedup / compute threads or ranks. The measured hardware ceiling is about 3.5x.
+
+| Config | median compute_s | speedup | efficiency |
+|---|---|---|---|
+| seq | 99.66 | 1.00 | |
+| omp 1 thread | 93.63 | 1.06 | |
+| omp 2 threads | 52.83 | 1.89 | 94% |
+| omp 3 threads | 44.73 | 2.23 | 74% |
+| omp 4 threads | 38.55 | 2.58 | 65% |
+| omp 6 threads | 34.42 | 2.90 | 48% |
+| omp 8 threads | 33.03 | 3.02 | 38% |
+| mpi static 1 rank | 95.59 | 1.04 | |
+| mpi static 2 ranks | 90.93 | 1.10 | 55% |
+| mpi static 4 ranks | 65.73 | 1.52 | 38% |
+| mpi static 8 ranks | 71.36 | 1.40 | 17% |
+| mpi dynamic 1 worker | 110.12 | 0.91 | |
+| mpi dynamic 2 workers | 67.34 | 1.48 | 74% |
+| mpi dynamic 4 workers | 46.10 | 2.16 | 54% |
+| mpi dynamic 8 workers | 38.23 | 2.61 | 33% |
+| hybrid static 1x8 | 32.71 | 3.05 | 38% |
+| hybrid static 2x4 | 40.54 | 2.46 | 31% |
+| hybrid static 4x2 | 44.25 | 2.25 | 28% |
+| hybrid static 8x1 | 57.76 | 1.73 | 22% |
+| hybrid dynamic 1x8 | 39.15 | 2.55 | 32% |
+| hybrid dynamic 2x4 | 37.20 | 2.68 | 33% |
+| hybrid dynamic 4x2 | 38.80 | 2.57 | 32% |
+| hybrid dynamic 8x1 | 36.96 | 2.70 | 34% |
+(dynamic configs use one extra coordinator rank; hybrid efficiency is against 8 logical threads but there are only 4 physical cores)
+
+### Findings
+- OpenMP: near-linear to 2 threads, flat beyond 6; hyperthreads add nothing; 1-thread overhead negligible (93.6 s vs seq 99.7 s)
+- Static MPI is poor and 8 ranks is worse than 4: the cheap sky rows leave one rank with most of the work
+- Dynamic vs static on the same compute ranks: 1.35x (2), 1.43x (4), 1.87x (8); the advantage grows with ranks
+- MPI dynamic is about 20% slower than OpenMP at 4 compute processes (19%, 30%, 23% in the three rounds); cause untested
+- MPI dynamic with 1 worker is slower than seq (0.91x); overhead of the tile machinery, cause untested
+- Hybrid static improves as ranks drop (3.05x at 1x8 down to 1.73x at 8x1); interpretation: OpenMP dynamic scheduling balances inside each rank
+- Hybrid dynamic is flat across rank x thread splits (differences are noise) and 12-19% behind omp 8 threads
+- Best configs on this machine: omp 8 threads and hybrid static 1x8 (same thing); MPI adds nothing on one node
+
+### Caveats
+- Drift: round 3 was slower for many configs (omp-t4 35.4 s to 46.2 s); 3 repeats cannot separate gaps under about 10%
+- Seq baseline spread is 92 to 105 s, so absolute speedups carry about +/-7%; ratios between parallel configs are firmer
