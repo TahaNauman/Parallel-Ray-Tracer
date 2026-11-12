@@ -190,3 +190,21 @@ Efficiency = speedup / compute threads or ranks. The measured hardware ceiling i
 ### Caveats
 - Drift: round 3 was slower for many configs (omp-t4 35.4 s to 46.2 s); 3 repeats cannot separate gaps under about 10%
 - Seq baseline spread is 92 to 105 s, so absolute speedups carry about +/-7%; ratios between parallel configs are firmer
+
+## Resolution suite (SPP 4, 3 rounds; best-of-3 / median, seconds)
+| width | seq | omp-t4 | mpi-dynamic-w4 |
+|---|---|---|---|
+| 1280 | 12.11 / 12.91 | 4.66 / 5.42 | 4.75 / 6.17 |
+| 1920 | 28.20 / 33.67 | 9.70 / 9.99 | 10.57 / 11.64 |
+| 3840 | 109.92 / 115.91 | 38.95 / 39.67 | 44.82 / 47.43 |
+- Seconds per megapixel (best-of-3): seq 13.1, 13.6, 13.3; omp 5.1, 4.7, 4.7; mpi 5.2, 5.1, 5.4 -> time is linear in pixel count
+- Speedup (best-of-3) omp 2.6x, 2.9x, 2.8x; mpi dynamic 2.5x, 2.7x, 2.5x: independent of resolution
+- Median-based speedups are distorted by noise (seq 1920 ranged 28.2 to 44.5 s); report best-of-3 alongside medians
+- MPI dynamic 9-15% behind OpenMP (best-of-3), 17-20% (median); consistent with the main suite
+
+## Complexity suite (960 px, sequential best-of-3 / median, seconds)
+- SPP 1/4/16/64: 1.51/1.95, 6.27/6.64, 24.78/33.10, 97.30/127.79 -> linear (x4.15, x3.95, x3.93)
+- Depth 1/2/3/5/8: 12.61/16.30, 18.91/25.61, 22.09/28.03, 24.78/33.10, 24.68/33.63 -> saturates after about 5
+- Objects 10/50/100/200: 3.89/5.09, 12.72/19.10, 24.78/33.10, 47.81/49.79 -> linear, about 0.24 s per object (brute-force intersection)
+- Parallel speedup (omp-t4, mpi-dynamic-w4) ranged 2.0x to 3.3x across points by medians, no clear trend; noise dominates
+- Same seq config varied up to 46% between rounds (24.8 to 36.2 s)
