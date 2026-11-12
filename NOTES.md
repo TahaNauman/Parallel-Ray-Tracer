@@ -208,3 +208,20 @@ Efficiency = speedup / compute threads or ranks. The measured hardware ceiling i
 - Objects 10/50/100/200: 3.89/5.09, 12.72/19.10, 24.78/33.10, 47.81/49.79 -> linear, about 0.24 s per object (brute-force intersection)
 - Parallel speedup (omp-t4, mpi-dynamic-w4) ranged 2.0x to 3.3x across points by medians, no clear trend; noise dominates
 - Same seq config varied up to 46% between rounds (24.8 to 36.2 s)
+
+## 8K suite (7680x4320, SPP 4, depth 5, 100 objects, 3 rounds; seconds)
+| Config | median | min..max | speedup | efficiency |
+|---|---|---|---|---|
+| seq | 377.13 | 372.84..387.17 | 1.00 | |
+| omp 8 threads | 125.92 | 125.69..132.23 | 3.00x | 38% (of 8 threads) |
+| hybrid dynamic 2x4 | 151.53 | 146.92..153.52 | 2.49x | 31% (of 8 threads) |
+| mpi dynamic 4 workers | 182.58 | 182.23..185.74 | 2.07x | 52% (of 4 workers) |
+| mpi static 4 ranks | 260.88 | 259.37..272.90 | 1.45x | 36% (of 4 ranks) |
+- Run-to-run spread is 2-5% for runs of minutes, versus 20-46% for runs of seconds
+- Same ordering as 1080p; dynamic is 1.43x faster than static on 4 compute ranks at both sizes
+- Hybrid 2x4 is 20% behind omp-8 here (13% at 1080p); within noise of each other, cause untested
+- Linear model check: predicted seq 441 s from the resolution suite (13.3 s/Mpx), measured 377 s (11.4 s/Mpx)
+  The main suite's best seq (92 s at SPP 16, 1080p) gives 11.1 s/Mpx at SPP 4, matching the 8K run
+  so sessions differ by about 17% in machine speed; scaling is linear within a session; compare only within a suite
+- Extrapolated seq 8K at SPP 16 is about 4 x 377 = 1500 s (25 min); not measured
+- 8K run used SPP 4 (not the locked 16) so all configs could be repeated 3 times; time is linear in SPP (complexity suite)

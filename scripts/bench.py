@@ -89,8 +89,8 @@ SUITES = {
                    + [hyb_dynamic(w, t) for w, t in ((1, 8), (2, 4), (4, 2), (8, 1))])),
     "resolution": (dict(width=1920, spp=4, depth=5, objects=100), resolution_jobs),
     "complexity": (dict(width=960, spp=16, depth=5, objects=100), complexity_jobs),
-    "big": (dict(width=7680, spp=16, depth=5, objects=100),
-            fixed([seq(), omp(4), mpi_dynamic(4), hyb_dynamic(2, 4), hyb_dynamic(4, 2)])),
+    "big": (dict(width=7680, spp=4, depth=5, objects=100),
+            fixed([seq(), omp(8), mpi_static(4), mpi_dynamic(4), hyb_dynamic(2, 4)])),
 }
 
 
