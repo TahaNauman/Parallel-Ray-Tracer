@@ -4,7 +4,7 @@ CXX      = g++
 MPICXX   = mpicxx
 CXXFLAGS = -O2 -std=c++17 -Isrc
 
-all: seq omp
+all: seq omp mpi hybrid
 
 bin:
 > mkdir -p bin
