@@ -225,3 +225,16 @@ Efficiency = speedup / compute threads or ranks. The measured hardware ceiling i
   so sessions differ by about 17% in machine speed; scaling is linear within a session; compare only within a suite
 - Extrapolated seq 8K at SPP 16 is about 4 x 377 = 1500 s (25 min); not measured
 - 8K run used SPP 4 (not the locked 16) so all configs could be repeated 3 times; time is linear in SPP (complexity suite)
+
+## Correction to the 8K linear-model note
+Time per megapixel at SPP 4 (best of runs): seq 13.1/13.6/13.3 s in the resolution suite (1280/1920/3840) but
+11.2 s at 8K, and 11.1 s from the main suite (1080p SPP 16 best 92 s / 4 / 2.07 Mpx). mpi-dynamic-w4 stays
+steady: 5.2/5.1/5.4 (resolution) and 5.5 (8K).
+So only the resolution suite's sequential runs were slow (about 17-20%); the parallel configs were not.
+The earlier explanation "sessions differ by 17% in machine speed" does not fit. Cause unknown
+(candidate, untested: single-core boost or thermal state).
+Consequence: resolution-suite speedups (omp-t4 2.6-2.9x) may be inflated; against 11.2 s/Mpx they would be
+about 2.2-2.4x. The main suite gives 2.6x. Report OpenMP 4-thread speedup as a range (about 2.2-2.9x).
+Other figure notes: parallel curves in the depth sweep are non-monotonic (noise); OpenMP 8-thread speedup is
+3.02x (median) vs 2.79x (best of runs); static MPI slowest process does not improve from 4 to 8 ranks
+(65.7 s to 71.4 s), cause not tested.
